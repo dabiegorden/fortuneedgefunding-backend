@@ -1,7 +1,7 @@
 import express from "express"
 import Challenge from "../models/Challenge.js"
-import User from "../models/user.js";
-import { isAuthenticated } from "../middleware/auth.js"
+import User from "../models/User.js";
+import { isAuthenticated } from "../middleware/middleware.js"
 import { createPayment } from "../services/paymentService.js"
 
 const router = express.Router()

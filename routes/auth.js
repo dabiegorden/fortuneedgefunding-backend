@@ -1,6 +1,5 @@
 import express from "express"
-import User from "../models/user.js";
-import { isAuthenticated } from "../middleware/auth.js"
+import User from "../models/User.js"
 import fs from "fs"
 
 const router = express.Router()
@@ -64,7 +63,7 @@ router.post("/register", async (req, res, next) => {
   }
 })
 
-// Login user
+// Login user - Update to fix authentication issues
 router.post("/login", async (req, res, next) => {
   try {
     const { username, password } = req.body
@@ -92,23 +91,44 @@ router.post("/login", async (req, res, next) => {
     // Set user in session
     req.session.user = user.toJSON()
 
-    res.status(200).json({
-      success: true,
-      message: "Login successful",
-      user: user.toJSON(),
+    // Save the session explicitly to ensure it's stored before responding
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to create session",
+          error: err.message,
+        })
+      }
+
+      // Return success response with user data
+      res.status(200).json({
+        success: true,
+        message: "Login successful",
+        user: user.toJSON(),
+      })
     })
   } catch (error) {
+    console.error("Login error:", error)
     next(error)
   }
 })
 
-// Logout user
-router.post("/logout", isAuthenticated, (req, res) => {
+// Logout user - Update to ensure proper session destruction
+router.post("/logout", (req, res) => {
+  if (!req.session || !req.session.user) {
+    return res.status(200).json({
+      success: true,
+      message: "Already logged out",
+    })
+  }
+
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({
         success: false,
         message: "Failed to logout",
+        error: err.message,
       })
     }
 
@@ -120,9 +140,9 @@ router.post("/logout", isAuthenticated, (req, res) => {
   })
 })
 
-// Get current user
+// Get current user - Update to improve error handling
 router.get("/getCurrentUser", (req, res) => {
-  if (req.session.user) {
+  if (req.session && req.session.user) {
     return res.status(200).json({
       success: true,
       user: req.session.user,
@@ -136,4 +156,3 @@ router.get("/getCurrentUser", (req, res) => {
 })
 
 export default router
-

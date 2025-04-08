@@ -23,6 +23,7 @@ const __dirname = path.dirname(__filename)
 
 // Initialize express app
 const app = express()
+const PORT = process.env.PORT || 5000
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, "uploads")
@@ -56,8 +57,10 @@ const upload = multer({
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 )
 app.use(express.json())
@@ -65,6 +68,12 @@ app.use(express.urlencoded({ extended: true }))
 app.use("/uploads", express.static(path.join(__dirname, "uploads")))
 
 // Session configuration
+// Validate session secret in production
+if (process.env.NODE_ENV === 'production' && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'your-secret-key')) {
+  console.error('WARNING: Proper SESSION_SECRET not set in production environment');
+  // Optionally: process.exit(1);
+}
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -72,16 +81,20 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGODB_URI,
-      ttl: 14 * 24 * 60 * 60, // 14 days
+      ttl: 14 * 24 * 60 * 60, 
       autoRemove: "native",
+      touchAfter: 24 * 3600 
     }),
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+      maxAge: 14 * 24 * 60 * 60 * 1000, 
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      // domain: '.yourdomain.com' // Uncomment if needed for cross-subdomain functionality
     },
+    name: 'propfirm.sid', // Custom name makes it harder to identify the session technology
   }),
-)
+);
 
 // Make upload middleware available globally
 app.locals.upload = upload
@@ -108,8 +121,8 @@ mongoose
   .then(() => {
     console.log("Connected to MongoDB")
     // Start server
-    app.listen(process.env.PORT, () => {
-      console.log(`Server running on port ${process.env.PORT}`)
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`)
     })
   })
   .catch((err) => {
@@ -117,4 +130,4 @@ mongoose
     process.exit(1)
   })
 
-export default app;
+export default app

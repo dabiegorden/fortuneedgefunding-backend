@@ -1,6 +1,6 @@
 import express from "express"
-import User from "../models/user.js"
-import { isAuthenticated } from "../middleware/auth.js"
+import User from "../models/User.js"
+import { isAuthenticated } from "../middleware/middleware.js"
 import fs from "fs"
 import path from "path"
 import { fileURLToPath } from "url"

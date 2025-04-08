@@ -1,7 +1,7 @@
 import express from "express"
 import Payment from "../models/Payment.js"
 import Challenge from "../models/Challenge.js"
-import { isAuthenticated } from "../middleware/auth.js"
+import { isAuthenticated } from "../middleware/middleware.js"
 import { verifyPayment } from "../services/paymentService.js"
 import { sendTradingCredentials } from "../services/deriveService.js"
 
